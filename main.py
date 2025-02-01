@@ -4,10 +4,12 @@ from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
-import os
+import asyncio,random,httpx,logging
 
 # FastAPI app instance
 app = FastAPI()
+
+logger = logging.getLogger(__name__)
 
 # Initialize Jinja2 templates
 templates = Jinja2Templates(directory="templates")
@@ -144,3 +146,27 @@ async def chat_assistant(request: QueryRequest):
 async def get_ui(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
+
+
+
+#Only for Render (As deployed on render free instance so  these requests stop the server from sleeping by inactivity)
+# Self-pinger Improvement
+async def self_pinger():
+    """Keep Render instance active with random ping interval between 3 and 5 minutes"""
+    while True:
+        try:
+            async with httpx.AsyncClient(timeout=10) as client:
+                await client.get("https://chatassistant-03y2.onrender.com/health")
+        except Exception as e:
+            logger.error(f"Ping failed: {str(e)}")
+        # Random sleep time between 240 and 300 seconds (3 to 5 minutes)
+        await asyncio.sleep(random.randint(200, 299))
+
+@app.on_event("startup")
+async def startup_event():
+    # Create dedicated task instead of BackgroundTasks
+    asyncio.create_task(self_pinger())
+
+@app.get("/health")
+def health_check():
+    return {"status": "ok", "version": "1.0.0"}
