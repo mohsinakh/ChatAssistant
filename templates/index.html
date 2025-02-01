@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chat Assistant</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f7f6;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .chatbox {
+      width: 400px;
+      background-color: #ffffff;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+    }
+
+    .chat-header {
+      background-color: #007bff;
+      color: white;
+      padding: 15px;
+      text-align: center;
+    }
+
+    .chat-body {
+      height: 300px;
+      padding: 15px;
+      overflow-y: scroll;
+      border-bottom: 1px solid #ddd;
+    }
+
+    .chat-body .message {
+      margin: 10px 0;
+    }
+
+    .chat-body .message.user {
+      text-align: right;
+    }
+
+    .chat-body .message.assistant {
+      text-align: left;
+      background-color: #f1f1f1;
+      padding: 5px;
+      border-radius: 5px;
+    }
+
+    .chat-footer {
+      display: flex;
+      padding: 10px;
+      background-color: #f1f1f1;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .chat-footer input {
+      width: 80%;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+    }
+
+    .chat-footer button {
+      background-color: #007bff;
+      color: white;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .chat-footer button:hover {
+      background-color: #0056b3;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="chatbox">
+      <div class="chat-header">
+        <h2>Employee Chat Assistant</h2>
+      </div>
+      <div class="chat-body" id="chat-body">
+        <!-- Responses and queries will appear here -->
+      </div>
+      <div class="chat-footer">
+        <input type="text" id="query-input" placeholder="Ask a question..." />
+        <button id="send-btn">Send</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const sendButton = document.getElementById('send-btn');
+    const inputField = document.getElementById('query-input');
+    const chatBody = document.getElementById('chat-body');
+
+    function displayMessage(message, type) {
+      const messageDiv = document.createElement('div');
+      messageDiv.classList.add('message', type);
+      messageDiv.textContent = message;
+      chatBody.appendChild(messageDiv);
+      chatBody.scrollTop = chatBody.scrollHeight;
+    }
+
+    async function sendQuery(query) {
+      try {
+        const response = await fetch('/query', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query: query })
+        });
+        const data = await response.json();
+        return data.response;
+      } catch (error) {
+        return 'Error processing query.';
+      }
+    }
+
+    sendButton.addEventListener('click', async () => {
+      const userQuery = inputField.value.trim();
+      if (userQuery) {
+        displayMessage(userQuery, 'user');
+        inputField.value = '';
+        const assistantResponse = await sendQuery(userQuery);
+        displayMessage(assistantResponse, 'assistant');
+      }
+    });
+
+    inputField.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        sendButton.click();
+      }
+    });
+  </script>
+</body>
+</html>
